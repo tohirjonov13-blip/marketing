@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Точка Роста — Маркетинг Аналитика</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a1a;
+    --text2: #6b6860;
+    --text3: #9b9890;
+    --accent: #2d6a4f;
+    --accent2: #40916c;
+    --accent-light: #d8f3dc;
+    --red: #e63946;
+    --red-light: #fde8ea;
+    --amber: #f4a261;
+    --amber-light: #fef0e6;
+    --blue: #2176ae;
+    --blue-light: #deeaf6;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141412;
+      --surface: #1e1d1a;
+      --surface2: #2a2927;
+      --border: rgba(255,255,255,0.1);
+      --text: #f0ede8;
+      --text2: #9b9890;
+      --text3: #6b6860;
+      --accent: #52b788;
+      --accent2: #74c69d;
+      --accent-light: #1b3a2b;
+      --red: #ff6b6b;
+      --red-light: #2d1a1a;
+      --amber: #f4a261;
+      --amber-light: #2d2010;
+      --blue: #5aacf0;
+      --blue-light: #0d2035;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  .header { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .nav { display: flex; gap: 2px; }
+  .nav-btn { padding: 6px 14px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text2); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .nav-btn.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  .nav-btn:hover:not(.active) { background: var(--surface2); color: var(--text); }
+  
+  .main { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+  
+  .section-title { font-size: 13px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; }
+  
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .kpi { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+  .kpi-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+  .badge-green { background: var(--accent-light); color: var(--accent); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 2rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 2rem; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .card-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .card-title i { color: var(--text3); font-size: 16px; }
+  
+  .chart-wrap { position: relative; width: 100%; }
+  
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border); background: var(--surface2); }
+  tbody td { padding: 10px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .td-mono { font-family: monospace; font-size: 12px; }
+  
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 12px; color: var(--text2); }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); font-size: 13px; outline: none; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .btn { padding: 8px 16px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--accent); color: white; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-outline { background: transparent; color: var(--text); }
+  .btn-outline:hover { background: var(--surface2); }
+  .btn-danger { background: var(--red); }
+  
+  .year-tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; }
+  .year-tab { padding: 6px 16px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .year-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  
+  .comparison-bar { height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; margin-top: 4px; }
+  .comparison-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.5s; }
+  
+  .empty { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+  
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .alert-success { background: var(--accent-light); color: var(--accent); }
+  .alert-error { background: var(--red-light); color: var(--red); }
+  
+  .month-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; background: var(--surface2); color: var(--text2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><div class="logo-dot"></div>Точка Роста — Аналитика</div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i> Обзор</button>
+    <button class="nav-btn" onclick="showPage('marketing')"><i class="ti ti-speakerphone"></i> Маркетинг</button>
+    <button class="nav-btn" onclick="showPage('sales')"><i class="ti ti-trending-up"></i> Продажи</button>
+    <button class="nav-btn" onclick="showPage('entry')"><i class="ti ti-pencil"></i> Ввод данных</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- OVERVIEW PAGE -->
+<div id="page-overview" class="page active">
+  <div class="section-title" style="margin-bottom:1.5rem">Общий обзор — 2026 год</div>
+  
+  <div class="kpi-grid" id="kpi-overview"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Расходы на маркетинг по месяцам ($)</div>
+      <div class="legend" id="legend-spend"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chartSpend" role="img" aria-label="Расходы на маркетинг по месяцам"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-users"></i> Лиды и продажи</div>
+      <div class="legend" id="legend-leads"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chartLeads" role="img" aria-label="Лиды и продажи"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-target"></i> Конверсия по месяцам</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartCR" role="img" aria-label="Конверсия"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-coin"></i> CPS — стоимость продажи ($)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartCPS" role="img" aria-label="Стоимость продажи"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-pie"></i> Структура расходов 2026</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartPie" role="img" aria-label="Структура расходов"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- MARKETING PAGE -->
+<div id="page-marketing" class="page">
+  <div class="section-title" style="margin-bottom:1.5rem">Маркетинговые расходы</div>
+  
+  <div class="year-tabs">
+    <button class="year-tab active" onclick="setMktYear(2026, this)">2026</button>
+    <button class="year-tab" onclick="setMktYear(2025, this)">2025</button>
+  </div>
+
+  <div class="kpi-grid" id="kpi-mkt"></div>
+
+  <div class="grid-2" style="margin-bottom:2rem">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-line"></i> Динамика расходов ($)</div>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartMktTrend" role="img" aria-label="Динамика расходов"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-stack"></i> Каналы расходов</div>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartMktChannels" role="img" aria-label="Каналы расходов"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table"></i> Таблица по месяцам</div>
+    <div class="table-wrap">
+      <table id="mktTable">
+        <thead><tr id="mktTableHead"></tr></thead>
+        <tbody id="mktTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SALES PAGE -->
+<div id="page-sales" class="page">
+  <div class="section-title" style="margin-bottom:1.5rem">Динамика продаж 2024–2026</div>
+  
+  <div class="kpi-grid" id="kpi-sales"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Продажи по годам</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#9b9890"></div>2024</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2d6a4f"></div>2025</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2176ae"></div>2026 (факт)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f4a261;border:2px dashed #f4a261;background:transparent;width:18px;height:2px;border-radius:0"></div>прогноз</div>
+      </div>
+      <div class="chart-wrap" style="height:300px"><canvas id="chartSalesYoY" role="img" aria-label="Продажи по годам"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-trending-up"></i> Рост YoY (%)</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="chartGrowth" role="img" aria-label="Рост YoY"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table"></i> Сравнение продаж по месяцам</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Месяц</th>
+          <th class="td-num">2024</th>
+          <th class="td-num">2025</th>
+          <th class="td-num">Рост 24→25</th>
+          <th class="td-num">Прогноз 2026</th>
+          <th class="td-num">2026 (факт)</th>
+          <th class="td-num">Откл. от прогноза</th>
+        </tr></thead>
+        <tbody id="salesTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY PAGE -->
+<div id="page-entry" class="page">
+  <div class="section-title" style="margin-bottom:1.5rem">Ввод данных</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-plus"></i> Добавить маркетинговую запись</div>
+      <div id="entry-alert"></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Год</label>
+          <select id="e-year"><option>2026</option><option>2025</option><option>2024</option></select>
+        </div>
+        <div class="form-group">
+          <label>Месяц</label>
+          <select id="e-month">
+            <option>Январь</option><option>Февраль</option><option>Март</option>
+            <option>Апрель</option><option>Май</option><option>Июнь</option>
+            <option>Июль</option><option>Август</option><option>Сентябрь</option>
+            <option>Октябрь</option><option>Ноябрь</option><option>Декабрь</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Таргет Instagram ($)</label>
+          <input type="number" id="e-inst" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Реклама Tilda ($)</label>
+          <input type="number" id="e-tilda" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Курсы.уз ($)</label>
+          <input type="number" id="e-kursy" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Продакшн ($)</label>
+          <input type="number" id="e-prod" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Google продвижение ($)</label>
+          <input type="number" id="e-google" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Входящие звонки</label>
+          <input type="number" id="e-calls" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Заявки Tilda</label>
+          <input type="number" id="e-tilda-leads" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Переписки Instagram</label>
+          <input type="number" id="e-inst-msgs" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Лиды Instagram (номер)</label>
+          <input type="number" id="e-inst-leads" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Продажи (учеников)</label>
+          <input type="number" id="e-sales" placeholder="0">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="saveEntry()"><i class="ti ti-device-floppy"></i> Сохранить</button>
+        <button class="btn btn-outline" onclick="clearEntryForm()"><i class="ti ti-x"></i> Очистить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list"></i> Последние записи</div>
+      <div id="entry-list"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+const data2026 = [
+  { month:'Январь', inst:1816, tilda:340.45, kursy:85, prod:375, google:320, total:2936.45, calls:216, tildaLeads:52, instMsgs:815, instLeads:365, allLeads:633, sales:90, cps:32.63, cpl:4.64, cr:0.0902 },
+  { month:'Февраль', inst:1514, tilda:470.55, kursy:85, prod:390, google:320, total:2779.55, calls:170, tildaLeads:64, instMsgs:768, instLeads:409, allLeads:643, sales:95, cps:29.26, cpl:4.32, cr:0.0903 },
+  { month:'Март', inst:1814, tilda:505.57, kursy:85, prod:300, google:320, total:3024.57, calls:183, tildaLeads:53, instMsgs:639, instLeads:361, allLeads:597, sales:103, cps:29.36, cpl:5.07, cr:0.1075 },
+  { month:'Апрель', inst:1474, tilda:480.64, kursy:85, prod:430, google:320, total:2789.64, calls:154, tildaLeads:64, instMsgs:483, instLeads:244, allLeads:462, sales:130, cps:21.46, cpl:6.04, cr:0.1841 },
+  { month:'Май', inst:45.85, tilda:0, kursy:0, prod:0, google:0, total:45.85, calls:0, tildaLeads:0, instMsgs:0, instLeads:0, allLeads:0, sales:0, cps:null, cpl:null, cr:null },
+];
+
+const data2025 = [
+  { month:'Июль', inst:1075, tilda:100, kursy:82, prod:390, google:0, total:1647, calls:221, tildaLeads:0, instMsgs:0, instLeads:200, allLeads:421, sales:98, cps:17.5, cpl:8.58, cr:0.49 },
+  { month:'Август', inst:1512, tilda:0, kursy:83, prod:270, google:0, total:1865, calls:217, tildaLeads:0, instMsgs:0, instLeads:334, allLeads:551, sales:92, cps:21.6, cpl:5.95, cr:0.2754 },
+  { month:'Сентябрь', inst:1752, tilda:150, kursy:85, prod:240, google:0, total:2227, calls:237, tildaLeads:0, instMsgs:0, instLeads:360, allLeads:597, sales:107, cps:20, cpl:5.93, cr:0.2972 },
+  { month:'Октябрь', inst:1820, tilda:0, kursy:85, prod:350, google:0, total:2255, calls:159, tildaLeads:0, instMsgs:0, instLeads:279, allLeads:438, sales:82, cps:27.5, cpl:8.08, cr:0.2939 },
+  { month:'Ноябрь', inst:1748, tilda:300, kursy:85, prod:226, google:0, total:2359, calls:194, tildaLeads:0, instMsgs:0, instLeads:347, allLeads:541, sales:79, cps:26, cpl:5.94, cr:0.2277 },
+  { month:'Декабрь', inst:1853, tilda:250, kursy:85, prod:480, google:325, total:2993, calls:151, tildaLeads:24, instMsgs:774, instLeads:337, allLeads:512, sales:81, cps:33.92, cpl:2.88, cr:0.2404 },
+];
+
+const salesData = {
+  months: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+  y2024: [66,55,66,29,50,38,46,65,41,47,38,25],
+  y2025: [62,65,75,80,80,80,97,92,107,82,79,81],
+  y2026forecast: [95,106,115,131,110,122,148,119,173,117,120,137],
+  y2026actual: [90,95,103,130,null,null,null,null,null,null,null,null],
+};
+
+let customEntries = JSON.parse(localStorage.getItem('tr_entries') || '[]');
+let mktYear = 2026;
+
+function fmt(n, decimals=0) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('ru', { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
+}
+function fmtPct(n) {
+  if (n == null || isNaN(n)) return '—';
+  return (n*100).toFixed(1) + '%';
+}
+function growthBadge(pct) {
+  if (pct == null) return '';
+  const v = (pct*100).toFixed(1);
+  const cls = pct >= 0 ? 'badge-green' : 'badge-red';
+  const icon = pct >= 0 ? '↑' : '↓';
+  return `<span class="badge ${cls}">${icon} ${Math.abs(v)}%</span>`;
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const idx = ['overview','marketing','sales','entry'].indexOf(name);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (name === 'overview') renderOverview();
+  if (name === 'marketing') renderMarketing();
+  if (name === 'sales') renderSales();
+  if (name === 'entry') renderEntryList();
+}
+
+let charts = {};
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+const COLORS = {
+  inst: '#2d6a4f', tilda: '#2176ae', kursy: '#f4a261', prod: '#9b59b6', google: '#e63946',
+  y2024: '#9b9890', y2025: '#2d6a4f', y2026: '#2176ae', forecast: '#f4a261',
+  leads: '#2176ae', sales2: '#2d6a4f', cr: '#9b59b6', cps: '#e63946',
+};
+
+function renderOverview() {
+  const active = data2026.filter(d => d.sales && d.sales > 0);
+  const totalSpend = active.reduce((s,d) => s + d.total, 0);
+  const totalSales = active.reduce((s,d) => s + d.sales, 0);
+  const totalLeads = active.reduce((s,d) => s + d.allLeads, 0);
+  const avgCR = active.reduce((s,d) => s + (d.cr||0), 0) / active.length;
+  const avgCPS = totalSpend / totalSales;
+
+  const kpiEl = document.getElementById('kpi-overview');
+  kpiEl.innerHTML = `
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-currency-dollar" style="font-size:14px"></i> Общий бюджет</div><div class="kpi-value">$${fmt(totalSpend,0)}</div><div class="kpi-sub">2026 (янв–апр)</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-users" style="font-size:14px"></i> Продажи</div><div class="kpi-value">${fmt(totalSales)}</div><div class="kpi-sub">учеников</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-message" style="font-size:14px"></i> Лиды</div><div class="kpi-value">${fmt(totalLeads)}</div><div class="kpi-sub">всего контактов</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-target" style="font-size:14px"></i> Конверсия</div><div class="kpi-value">${fmtPct(avgCR)}</div><div class="kpi-sub">средняя CR</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-coin" style="font-size:14px"></i> CPS</div><div class="kpi-value">$${fmt(avgCPS,1)}</div><div class="kpi-sub">стоимость продажи</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-chart-bar" style="font-size:14px"></i> Бюджет/продажа</div><div class="kpi-value">$${fmt(totalSpend/totalSales,1)}</div><div class="kpi-sub">эффективность</div></div>
+  `;
+
+  const labels = active.map(d => d.month);
+
+  destroyChart('spend'); destroyChart('leads_c');
+  charts['spend'] = new Chart(document.getElementById('chartSpend'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Instagram', data: active.map(d=>d.inst), backgroundColor: COLORS.inst },
+        { label:'Tilda', data: active.map(d=>d.tilda), backgroundColor: COLORS.tilda },
+        { label:'Курсы.уз', data: active.map(d=>d.kursy), backgroundColor: COLORS.kursy },
+        { label:'Продакшн', data: active.map(d=>d.prod), backgroundColor: COLORS.prod },
+        { label:'Google', data: active.map(d=>d.google), backgroundColor: COLORS.google },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'$'+v}}} }
+  });
+  document.getElementById('legend-spend').innerHTML = [
+    ['Instagram',COLORS.inst],['Tilda',COLORS.tilda],['Курсы.уз',COLORS.kursy],['Продакшн',COLORS.prod],['Google',COLORS.google]
+  ].map(([l,c])=>`<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${l}</div>`).join('');
+
+  charts['leads_c'] = new Chart(document.getElementById('chartLeads'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Лиды', data: active.map(d=>d.allLeads), backgroundColor: COLORS.leads, yAxisID:'y' },
+        { label:'Продажи', data: active.map(d=>d.sales), backgroundColor: COLORS.sales2, yAxisID:'y' },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+  document.getElementById('legend-leads').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:${COLORS.leads}"></div>Лиды</div>
+    <div class="legend-item"><div class="legend-dot" style="background:${COLORS.sales2}"></div>Продажи</div>
+  `;
+
+  destroyChart('cr_c'); destroyChart('cps_c'); destroyChart('pie_c');
+  charts['cr_c'] = new Chart(document.getElementById('chartCR'), {
+    type: 'line',
+    data: { labels, datasets: [{ label:'CR', data: active.map(d=>(d.cr||0)*100), borderColor:COLORS.cr, backgroundColor:COLORS.cr+'22', fill:true, tension:0.4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}}} }
+  });
+
+  charts['cps_c'] = new Chart(document.getElementById('chartCPS'), {
+    type: 'line',
+    data: { labels, datasets: [{ label:'CPS', data: active.map(d=>d.cps), borderColor:COLORS.cps, backgroundColor:COLORS.cps+'22', fill:true, tension:0.4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'$'+v.toFixed(1)}}} }
+  });
+
+  const totInst = active.reduce((s,d)=>s+d.inst,0);
+  const totTilda = active.reduce((s,d)=>s+d.tilda,0);
+  const totKursy = active.reduce((s,d)=>s+d.kursy,0);
+  const totProd = active.reduce((s,d)=>s+d.prod,0);
+  const totGoogle = active.reduce((s,d)=>s+d.google,0);
+  charts['pie_c'] = new Chart(document.getElementById('chartPie'), {
+    type: 'doughnut',
+    data: { labels:['Instagram','Tilda','Курсы.уз','Продакшн','Google'], datasets:[{ data:[totInst,totTilda,totKursy,totProd,totGoogle], backgroundColor:[COLORS.inst,COLORS.tilda,COLORS.kursy,COLORS.prod,COLORS.google], borderWidth:0 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{font:{size:11},padding:8} } } }
+  });
+}
+
+function setMktYear(y, el) {
+  mktYear = y;
+  document.querySelectorAll('.year-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderMarketing();
+}
+
+function renderMarketing() {
+  const rows = (mktYear === 2026 ? data2026 : data2025).filter(d => d.total > 0);
+  const totalSpend = rows.reduce((s,d)=>s+d.total,0);
+  const avgTotal = totalSpend / rows.length;
+  const maxMonth = rows.reduce((a,b)=>a.total>b.total?a:b);
+  const minMonth = rows.reduce((a,b)=>a.total<b.total?a:b);
+
+  document.getElementById('kpi-mkt').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Общий бюджет</div><div class="kpi-value">$${fmt(totalSpend,0)}</div><div class="kpi-sub">${rows.length} месяцев</div></div>
+    <div class="kpi"><div class="kpi-label">Средний бюджет</div><div class="kpi-value">$${fmt(avgTotal,0)}</div><div class="kpi-sub">в месяц</div></div>
+    <div class="kpi"><div class="kpi-label">Макс. месяц</div><div class="kpi-value">$${fmt(maxMonth.total,0)}</div><div class="kpi-sub">${maxMonth.month}</div></div>
+    <div class="kpi"><div class="kpi-label">Мин. месяц</div><div class="kpi-value">$${fmt(minMonth.total,0)}</div><div class="kpi-sub">${minMonth.month}</div></div>
+  `;
+
+  destroyChart('mkt-trend'); destroyChart('mkt-ch');
+  charts['mkt-trend'] = new Chart(document.getElementById('chartMktTrend'), {
+    type: 'line',
+    data: { labels: rows.map(d=>d.month), datasets: [
+      { label:'Общий бюджет', data:rows.map(d=>d.total), borderColor:COLORS.inst, backgroundColor:COLORS.inst+'22', fill:true, tension:0.4 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()}}} }
+  });
+
+  charts['mkt-ch'] = new Chart(document.getElementById('chartMktChannels'), {
+    type: 'bar',
+    data: { labels: rows.map(d=>d.month), datasets: [
+      { label:'Instagram', data:rows.map(d=>d.inst), backgroundColor:COLORS.inst },
+      { label:'Tilda', data:rows.map(d=>d.tilda), backgroundColor:COLORS.tilda },
+      { label:'Курсы.уз', data:rows.map(d=>d.kursy), backgroundColor:COLORS.kursy },
+      { label:'Продакшн', data:rows.map(d=>d.prod), backgroundColor:COLORS.prod },
+      { label:'Google', data:rows.map(d=>d.google), backgroundColor:COLORS.google },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:8}}}, scales:{x:{stacked:true},y:{stacked:true}} }
+  });
+
+  const head = document.getElementById('mktTableHead');
+  head.innerHTML = '<th>Месяц</th><th class="td-num">Instagram $</th><th class="td-num">Tilda $</th><th class="td-num">Курсы.уз $</th><th class="td-num">Продакшн $</th><th class="td-num">Google $</th><th class="td-num">Итого $</th><th class="td-num">Продажи</th><th class="td-num">CPS $</th><th class="td-num">CR</th>';
+  const body = document.getElementById('mktTableBody');
+  body.innerHTML = rows.map(d => `<tr>
+    <td><span class="month-badge">${d.month}</span></td>
+    <td class="td-num">$${fmt(d.inst,0)}</td>
+    <td class="td-num">$${fmt(d.tilda,0)}</td>
+    <td class="td-num">$${fmt(d.kursy,0)}</td>
+    <td class="td-num">$${fmt(d.prod,0)}</td>
+    <td class="td-num">$${fmt(d.google,0)}</td>
+    <td class="td-num" style="font-weight:500">$${fmt(d.total,0)}</td>
+    <td class="td-num">${fmt(d.sales)}</td>
+    <td class="td-num">${d.cps ? '$'+fmt(d.cps,1) : '—'}</td>
+    <td class="td-num">${fmtPct(d.cr)}</td>
+  </tr>`).join('');
+}
+
+function renderSales() {
+  const sd = salesData;
+  const total2024 = sd.y2024.reduce((a,b)=>a+b,0);
+  const total2025 = sd.y2025.reduce((a,b)=>a+b,0);
+  const total2026f = sd.y2026forecast.reduce((a,b)=>a+b,0);
+  const total2026a = sd.y2026actual.filter(Boolean).reduce((a,b)=>a+b,0);
+  const yoy = ((total2025 - total2024) / total2024 * 100).toFixed(1);
+
+  document.getElementById('kpi-sales').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Итог 2024</div><div class="kpi-value">${fmt(total2024)}</div><div class="kpi-sub">учеников</div></div>
+    <div class="kpi"><div class="kpi-label">Итог 2025</div><div class="kpi-value">${fmt(total2025)}</div><div class="kpi-sub">${growthBadge((total2025-total2024)/total2024)}</div></div>
+    <div class="kpi"><div class="kpi-label">Прогноз 2026</div><div class="kpi-value">${fmt(total2026f)}</div><div class="kpi-sub">план</div></div>
+    <div class="kpi"><div class="kpi-label">Факт 2026</div><div class="kpi-value">${fmt(total2026a)}</div><div class="kpi-sub">янв–апр</div></div>
+    <div class="kpi"><div class="kpi-label">YoY рост</div><div class="kpi-value">${yoy}%</div><div class="kpi-sub">2025 vs 2024</div></div>
+  `;
+
+  destroyChart('yoy'); destroyChart('growth');
+  charts['yoy'] = new Chart(document.getElementById('chartSalesYoY'), {
+    type: 'bar',
+    data: { labels: sd.months.slice(0,12), datasets: [
+      { label:'2024', data: sd.y2024, backgroundColor: COLORS.y2024 },
+      { label:'2025', data: sd.y2025, backgroundColor: COLORS.y2025 },
+      { label:'2026 факт', data: sd.y2026actual, backgroundColor: COLORS.y2026 },
+      { label:'2026 прогноз', data: sd.y2026forecast, borderColor: COLORS.forecast, borderWidth:2, borderDash:[4,4], type:'line', fill:false, tension:0.3, pointRadius:3, backgroundColor: 'transparent' },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  const growth = sd.y2025.map((v,i) => ((v - sd.y2024[i]) / sd.y2024[i] * 100));
+  charts['growth'] = new Chart(document.getElementById('chartGrowth'), {
+    type: 'bar',
+    data: { labels: sd.months, datasets: [{
+      label:'Рост YoY %', data: growth,
+      backgroundColor: growth.map(v => v >= 0 ? COLORS.y2025 : COLORS.cps)
+    }]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v.toFixed(0)+'%'}}} }
+  });
+
+  const body = document.getElementById('salesTableBody');
+  body.innerHTML = sd.months.map((m,i) => {
+    const g = ((sd.y2025[i]-sd.y2024[i])/sd.y2024[i]);
+    const act = sd.y2026actual[i];
+    const fore = sd.y2026forecast[i];
+    const dev = act != null ? ((act - fore) / fore) : null;
+    return `<tr>
+      <td><span class="month-badge">${m}</span></td>
+      <td class="td-num">${sd.y2024[i]}</td>
+      <td class="td-num">${sd.y2025[i]}</td>
+      <td class="td-num">${growthBadge(g)}</td>
+      <td class="td-num">${fore}</td>
+      <td class="td-num">${act != null ? act : '—'}</td>
+      <td class="td-num">${dev != null ? growthBadge(dev) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function saveEntry() {
+  const year = document.getElementById('e-year').value;
+  const month = document.getElementById('e-month').value;
+  const entry = {
+    id: Date.now(), year, month,
+    inst: parseFloat(document.getElementById('e-inst').value)||0,
+    tilda: parseFloat(document.getElementById('e-tilda').value)||0,
+    kursy: parseFloat(document.getElementById('e-kursy').value)||0,
+    prod: parseFloat(document.getElementById('e-prod').value)||0,
+    google: parseFloat(document.getElementById('e-google').value)||0,
+    calls: parseFloat(document.getElementById('e-calls').value)||0,
+    tildaLeads: parseFloat(document.getElementById('e-tilda-leads').value)||0,
+    instMsgs: parseFloat(document.getElementById('e-inst-msgs').value)||0,
+    instLeads: parseFloat(document.getElementById('e-inst-leads').value)||0,
+    sales: parseFloat(document.getElementById('e-sales').value)||0,
+  };
+  entry.total = entry.inst + entry.tilda + entry.kursy + entry.prod + entry.google;
+  entry.allLeads = entry.calls + entry.tildaLeads + entry.instLeads;
+  entry.cps = entry.sales ? entry.total / entry.sales : null;
+  entry.cpl = entry.allLeads ? entry.total / entry.allLeads : null;
+  entry.cr = entry.allLeads ? entry.sales / entry.allLeads : null;
+
+  customEntries.unshift(entry);
+  localStorage.setItem('tr_entries', JSON.stringify(customEntries));
+
+  const alert = document.getElementById('entry-alert');
+  alert.innerHTML = '<div class="alert alert-success"><i class="ti ti-check"></i> Запись сохранена!</div>';
+  setTimeout(() => alert.innerHTML = '', 3000);
+  clearEntryForm();
+  renderEntryList();
+}
+
+function clearEntryForm() {
+  ['e-inst','e-tilda','e-kursy','e-prod','e-google','e-calls','e-tilda-leads','e-inst-msgs','e-inst-leads','e-sales'].forEach(id => document.getElementById(id).value = '');
+}
+
+function deleteEntry(id) {
+  customEntries = customEntries.filter(e => e.id !== id);
+  localStorage.setItem('tr_entries', JSON.stringify(customEntries));
+  renderEntryList();
+}
+
+function renderEntryList() {
+  const el = document.getElementById('entry-list');
+  if (!customEntries.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>Нет записей</div>';
+    return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Год</th><th>Месяц</th><th class="td-num">Бюджет $</th><th class="td-num">Продажи</th><th class="td-num">CPS $</th><th></th></tr></thead>
+    <tbody>${customEntries.slice(0,10).map(e=>`<tr>
+      <td>${e.year}</td>
+      <td><span class="month-badge">${e.month}</span></td>
+      <td class="td-num">$${fmt(e.total,0)}</td>
+      <td class="td-num">${e.sales}</td>
+      <td class="td-num">${e.cps ? '$'+fmt(e.cps,1) : '—'}</td>
+      <td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px" onclick="deleteEntry(${e.id})"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+renderOverview();
+</script>
+</body>
+</html>
