@@ -447,13 +447,18 @@ async function doLogin() {
   btn.innerHTML = '<i class="ti ti-loader" style="animation:spin 0.8s linear infinite"></i> Вход…';
 
   try {
-    const url  = `${SCRIPT_URL}?action=login&login=${encodeURIComponent(login)}&password=${encodeURIComponent(password)}`;
-    console.log('[LOGIN] URL:', url);
-    const res  = await fetch(url);
+    const url  = `${SCRIPT_URL}?action=login&login=${encodeURIComponent(login)}&password=${encodeURIComponent(password)}&t=${Date.now()}`;
+    const res  = await fetch(url, { credentials: 'omit', cache: 'no-store' });
     const text = await res.text();
-    console.log('[LOGIN] raw response:', text);
-    const data = JSON.parse(text);
-    console.log('[LOGIN] parsed:', data);
+    let data;
+    try { data = JSON.parse(text); }
+    catch (_) {
+      errEl.innerHTML = `<i class="ti ti-alert-circle"></i> Ответ сервера: ${text.substring(0, 200)}`;
+      errEl.style.display = 'flex';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-login"></i> Войти';
+      return;
+    }
     if (data.ok) {
       currentUser = { login, role: data.role };
       sessionStorage.setItem('tr_user', JSON.stringify(currentUser));
@@ -463,8 +468,7 @@ async function doLogin() {
       errEl.style.display = 'flex';
     }
   } catch (e) {
-    console.error('[LOGIN] exception:', e);
-    errEl.innerHTML = `<i class="ti ti-alert-circle"></i> Ошибка: ${e.message}`;
+    errEl.innerHTML = `<i class="ti ti-alert-circle"></i> Ошибка сети: ${e.message}`;
     errEl.style.display = 'flex';
   }
 
